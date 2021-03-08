@@ -14,13 +14,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct{}
 type blogItem struct {
-	ID       primitive.ObjectID `bjson:"_id,omitempty"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	AuthorID string             `bson:"author_id"`
-	Content  string             `bjson:"content"`
+	Content  string             `bson:"content"`
 	Title    string             `bson:"title"`
 }
 
@@ -85,4 +87,35 @@ func main() {
 	fmt.Println("Disconnecting from mongodb...")
 	client.Disconnect(ctx)
 	fmt.Println("Server shutdown reached")
+}
+func (*server) CreateBlog(ctx context.Context, req *blogpb.CreateBlogRequest) (*blogpb.CreateBlogResponse, error) {
+	blog := req.GetBlog()
+	insertData := blogItem{
+		AuthorID: blog.GetAuthorId(),
+		Title:    blog.GetTitle(),
+		Content:  blog.GetContent(),
+	}
+	resp, insertErr := collection.InsertOne(context.Background(), insertData)
+	if insertErr != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Interal error: %v", insertErr),
+		)
+	}
+	blogID, ok := resp.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Can not convert to ObjectID: %v", insertErr),
+		)
+	}
+	return &blogpb.CreateBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:       blogID.Hex(),
+			AuthorId: blog.GetAuthorId(),
+			Title:    blog.GetTitle(),
+			Content:  blog.GetContent(),
+		},
+	}, nil
+
 }
