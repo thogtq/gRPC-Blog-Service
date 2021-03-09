@@ -26,8 +26,9 @@ func main() {
 	}
 	defer conn.Close()
 	service := blogpb.NewBlogServiceClient(conn)
-	
-	createBlog(service)
+
+	//createBlog(service)
+	readBlog(service)
 
 }
 func createBlog(service blogpb.BlogServiceClient) {
@@ -41,7 +42,18 @@ func createBlog(service blogpb.BlogServiceClient) {
 	}
 	createBlogRes, createBlogErr := service.CreateBlog(context.Background(), req)
 	if createBlogErr != nil {
-		log.Fatalf("can not create blog : %v", createBlogErr)
+		log.Printf("can not create blog : %v\n", createBlogErr)
 	}
-	fmt.Printf("Blog has been created : %v", createBlogRes.GetBlog())
+	fmt.Printf("Blog has been created : %v\n", createBlogRes.GetBlog())
+}
+func readBlog(service blogpb.BlogServiceClient) {
+	//read blog
+	req := &blogpb.ReadBlogRequest{
+		BlogId: "604750491ab91f87c478f3db",
+	}
+	res, readErr := service.ReadBlog(context.Background(), req)
+	if readErr != nil {
+		log.Fatalf("can not read blog : %v\n", readErr)
+	}
+	fmt.Printf("Blog was read : %v\n", res.GetBlog())
 }

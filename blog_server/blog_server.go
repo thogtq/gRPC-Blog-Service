@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/thogtq/grpc-blog-service/m/v1/blogpb"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -118,4 +119,32 @@ func (*server) CreateBlog(ctx context.Context, req *blogpb.CreateBlogRequest) (*
 		},
 	}, nil
 
+}
+func (*server) ReadBlog(ctx context.Context, req *blogpb.ReadBlogRequest) (*blogpb.ReadBlogResponse, error) {
+	blogID := req.GetBlogId()
+	oID, err := primitive.ObjectIDFromHex(blogID)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Invalid blog ID :%v", err),
+		)
+	}
+	data := &blogItem{}
+	findFilter := bson.M{"_id": oID}
+	findOpts := []*options.FindOneOptions{}
+	res := collection.FindOne(context.Background(), findFilter, findOpts...)
+	if err := res.Decode(data); err != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Blog not found: %v", err),
+		)
+	}
+	return &blogpb.ReadBlogResponse{
+		Blog: &blogpb.Blog{
+			Id:       data.ID.Hex(),
+			AuthorId: data.AuthorID,
+			Title:    data.Title,
+			Content:  data.Content,
+		},
+	}, nil
 }
