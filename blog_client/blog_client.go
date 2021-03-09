@@ -30,7 +30,7 @@ func main() {
 	blogID := createBlog(service)
 	readBlog(service, blogID)
 	updateBlog(service, blogID)
-
+	deleteBlog(service, blogID)
 }
 func createBlog(service blogpb.BlogServiceClient) string {
 	//create blog
@@ -74,4 +74,15 @@ func updateBlog(service blogpb.BlogServiceClient, blogID string) {
 		log.Fatalf("can not read blog : %v\n", updateErr)
 	}
 	fmt.Printf("Blog was updated : %v\n", res.GetBlog())
+}
+func deleteBlog(service blogpb.BlogServiceClient, blogID string) {
+	//delete blog
+	req := &blogpb.DeleteBlogRequest{
+		BlogId: blogID,
+	}
+	res, deleteErr := service.DeleteBlog(context.Background(), req)
+	if deleteErr != nil {
+		log.Fatalf("can not delete blog : %v\n", deleteErr)
+	}
+	fmt.Printf("Blog was deleted : %v\n", res.GetBlogId())
 }

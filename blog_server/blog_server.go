@@ -179,3 +179,29 @@ func blogItemToBlogpb(item *blogItem) *blogpb.Blog {
 		Content:  item.Content,
 	}
 }
+func (*server) DeleteBlog(ctx context.Context, req *blogpb.DeleteBlogRequest) (*blogpb.DeleteBlogResponse, error) {
+	oID, parseErr := primitive.ObjectIDFromHex(req.GetBlogId())
+	if parseErr != nil {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Can not parse blog ID: %v", parseErr),
+		)
+	}
+	deleteFilter := bson.M{"_id": oID}
+	res, deleteErr := collection.DeleteOne(context.Background(), deleteFilter)
+	if deleteErr != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("Can not delete blog : %v", deleteErr),
+		)
+	}
+	if res.DeletedCount == 0 {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Not found blog with provided ID"),
+		)
+	}
+	return &blogpb.DeleteBlogResponse{
+		BlogId: req.GetBlogId(),
+	}, nil
+}
