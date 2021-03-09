@@ -27,12 +27,12 @@ func main() {
 	defer conn.Close()
 	service := blogpb.NewBlogServiceClient(conn)
 
-	//createBlog(service)
-	//readBlog(service)
-	updateBlog(service)
+	blogID := createBlog(service)
+	readBlog(service, blogID)
+	updateBlog(service, blogID)
 
 }
-func createBlog(service blogpb.BlogServiceClient) {
+func createBlog(service blogpb.BlogServiceClient) string {
 	//create blog
 	req := &blogpb.CreateBlogRequest{
 		Blog: &blogpb.Blog{
@@ -46,11 +46,12 @@ func createBlog(service blogpb.BlogServiceClient) {
 		log.Printf("can not create blog : %v\n", createBlogErr)
 	}
 	fmt.Printf("Blog has been created : %v\n", createBlogRes.GetBlog())
+	return createBlogRes.GetBlog().GetId()
 }
-func readBlog(service blogpb.BlogServiceClient) {
+func readBlog(service blogpb.BlogServiceClient, blogID string) {
 	//read blog
 	req := &blogpb.ReadBlogRequest{
-		BlogId: "604750491ab91f87c478f3db",
+		BlogId: blogID,
 	}
 	res, readErr := service.ReadBlog(context.Background(), req)
 	if readErr != nil {
@@ -58,11 +59,11 @@ func readBlog(service blogpb.BlogServiceClient) {
 	}
 	fmt.Printf("Blog was read : %v\n", res.GetBlog())
 }
-func updateBlog(service blogpb.BlogServiceClient) {
+func updateBlog(service blogpb.BlogServiceClient, blogID string) {
 	//udpate blog
 	req := &blogpb.UpdateBlogRequest{
 		Blog: &blogpb.Blog{
-			Id:       "604750491ab91f87c478f3db",
+			Id:       blogID,
 			AuthorId: "Tran Quoc Thong",
 			Title:    "My first blog updated",
 			Content:  "Hello!",
