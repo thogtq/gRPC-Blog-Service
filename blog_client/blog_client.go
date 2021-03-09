@@ -28,7 +28,8 @@ func main() {
 	service := blogpb.NewBlogServiceClient(conn)
 
 	//createBlog(service)
-	readBlog(service)
+	//readBlog(service)
+	updateBlog(service)
 
 }
 func createBlog(service blogpb.BlogServiceClient) {
@@ -56,4 +57,20 @@ func readBlog(service blogpb.BlogServiceClient) {
 		log.Fatalf("can not read blog : %v\n", readErr)
 	}
 	fmt.Printf("Blog was read : %v\n", res.GetBlog())
+}
+func updateBlog(service blogpb.BlogServiceClient) {
+	//udpate blog
+	req := &blogpb.UpdateBlogRequest{
+		Blog: &blogpb.Blog{
+			Id:       "604750491ab91f87c478f3db",
+			AuthorId: "Tran Quoc Thong",
+			Title:    "My first blog updated",
+			Content:  "Hello!",
+		},
+	}
+	res, updateErr := service.UpdateBlog(context.Background(), req)
+	if updateErr != nil {
+		log.Fatalf("can not read blog : %v\n", updateErr)
+	}
+	fmt.Printf("Blog was updated : %v\n", res.GetBlog())
 }

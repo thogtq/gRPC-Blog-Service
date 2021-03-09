@@ -140,11 +140,42 @@ func (*server) ReadBlog(ctx context.Context, req *blogpb.ReadBlogRequest) (*blog
 		)
 	}
 	return &blogpb.ReadBlogResponse{
-		Blog: &blogpb.Blog{
-			Id:       data.ID.Hex(),
-			AuthorId: data.AuthorID,
-			Title:    data.Title,
-			Content:  data.Content,
-		},
+		Blog: blogItemToBlogpb(data),
 	}, nil
+}
+func (*server) UpdateBlog(ctx context.Context, req *blogpb.UpdateBlogRequest) (*blogpb.UpdateBlogResponse, error) {
+	blog := req.GetBlog()
+	blogID, err := primitive.ObjectIDFromHex(blog.GetId())
+	if err != nil {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Can not parse blog ID: %v", err),
+		)
+	}
+	data := &blogItem{
+		AuthorID: blog.GetAuthorId(),
+		Title:    blog.GetTitle(),
+		Content:  blog.GetContent(),
+	}
+	replaceFilter := bson.M{"_id": blogID}
+	replaceOpts := []*options.ReplaceOptions{}
+	_, updateErr := collection.ReplaceOne(context.Background(), replaceFilter, data, replaceOpts...)
+	if updateErr != nil {
+		return nil, status.Errorf(
+			codes.NotFound,
+			fmt.Sprintf("Can not update blog : %v", updateErr),
+		)
+	}
+	data.ID = blogID
+	return &blogpb.UpdateBlogResponse{
+		Blog: blogItemToBlogpb(data),
+	}, nil
+}
+func blogItemToBlogpb(item *blogItem) *blogpb.Blog {
+	return &blogpb.Blog{
+		Id:       item.ID.Hex(),
+		AuthorId: item.AuthorID,
+		Title:    item.Title,
+		Content:  item.Content,
+	}
 }
