@@ -205,3 +205,34 @@ func (*server) DeleteBlog(ctx context.Context, req *blogpb.DeleteBlogRequest) (*
 		BlogId: req.GetBlogId(),
 	}, nil
 }
+func (*server) ListBlog(req *blogpb.ListBlogRequest, stream blogpb.BlogService_ListBlogServer) error {
+	findFilter := primitive.D{{}}
+	cur, err := collection.Find(context.Background(), findFilter)
+	if err != nil {
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("internal error when find collection: %v", err),
+		)
+	}
+	defer cur.Close(context.Background())
+	for cur.Next(context.Background()) {
+		data := &blogItem{}
+		err := cur.Decode(data)
+		if err != nil {
+			return status.Errorf(
+				codes.Internal,
+				fmt.Sprintf("unable to decode data : %v", err),
+			)
+		}
+		stream.Send(&blogpb.ListBlogResponse{
+			Blog: blogItemToBlogpb(data),
+		})
+	}
+	if err := cur.Err(); err != nil {
+		return status.Errorf(
+			codes.Internal,
+			fmt.Sprintf("internal error from cursor: %v", err),
+		)
+	}
+	return nil
+}

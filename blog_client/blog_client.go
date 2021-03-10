@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/thogtq/grpc-blog-service/m/v1/blogpb"
@@ -31,6 +32,7 @@ func main() {
 	readBlog(service, blogID)
 	updateBlog(service, blogID)
 	deleteBlog(service, blogID)
+	listBlog(service)
 }
 func createBlog(service blogpb.BlogServiceClient) string {
 	//create blog
@@ -85,4 +87,21 @@ func deleteBlog(service blogpb.BlogServiceClient, blogID string) {
 		log.Fatalf("can not delete blog : %v\n", deleteErr)
 	}
 	fmt.Printf("Blog was deleted : %v\n", res.GetBlogId())
+}
+func listBlog(service blogpb.BlogServiceClient) {
+	stream, err := service.ListBlog(context.Background(), &blogpb.ListBlogRequest{})
+	if err != nil {
+		log.Fatalf("error while calling ListBlog : %v\n", err)
+	}
+	fmt.Printf("List of Blogs :\n")
+	for {
+		res, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("error while reading blog : %v\n", err)
+		}
+		fmt.Printf("%v\n", res.GetBlog())
+	}
 }
